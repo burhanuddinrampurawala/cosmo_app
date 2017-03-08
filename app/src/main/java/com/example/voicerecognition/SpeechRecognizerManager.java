@@ -185,7 +185,15 @@ public class SpeechRecognizerManager {
         {
             if(results!=null && mListener!=null)
                 mListener.onResults(results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION));
-            listenAgain();
+            // providing a delay for completion of speech
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    // Do something after 5s = 5000ms
+                    listenAgain();
+                }
+            }, 6000);
 
         }
 
@@ -204,13 +212,4 @@ public class SpeechRecognizerManager {
         public void onResults(ArrayList<String> results);
     }
 
-//    public void mute(boolean mute)
-//    {
-//        mMute=mute;
-//    }
-//
-//    public boolean isInMuteMode()
-//    {
-//        return mMute;
-//    }
 }

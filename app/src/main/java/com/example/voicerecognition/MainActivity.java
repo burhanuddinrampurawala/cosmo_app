@@ -67,7 +67,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        //connecting to api.ai
         final AIConfiguration config = new AIConfiguration("113d9a1fd6aa47988a6193227689dc99",
                 AIConfiguration.SupportedLanguages.English,
                 AIConfiguration.RecognitionEngine.System);
@@ -78,7 +78,7 @@ public class MainActivity extends Activity {
 
         videoView = (VideoView) findViewById(R.id.videoView);
         play(neutral);
-
+// checking if bluetooth is on or not
         if (bt == null) {
             Log.d("MAINACTIVITY", "bluetooth not detected");
         } else {
@@ -88,6 +88,7 @@ public class MainActivity extends Activity {
             }
 
         }
+        // starting speech recognizer
 
         if(PermissionHandler.checkPermission(this,PermissionHandler.RECORD_AUDIO)) {
             if(mSpeechManager==null)
@@ -104,27 +105,10 @@ public class MainActivity extends Activity {
         {
             PermissionHandler.askForPermission(PermissionHandler.RECORD_AUDIO,this);
         }
-//        this.mHandler = new Handler();
-//        this.mHandler.postDelayed(m_Runnable,8000);
 
     }
 
-
-
-//    private final Runnable m_Runnable = new Runnable()
-//    {
-//        public void run()
-//
-//        {
-//            play(neutral);
-//
-////            play(angry);
-////            play(sad);
-////            play(happy);
-//            mHandler.postDelayed(m_Runnable, 8000);
-//        }
-//
-//    };
+    // function to play videos
     private void play(final int video) {
         String uriPath = "android.resource://com.example.voicerecognition/" + video;
         Uri uri2 = Uri.parse(uriPath);
@@ -164,12 +148,14 @@ public class MainActivity extends Activity {
     {
         mSpeechManager=new SpeechRecognizerManager(this, new SpeechRecognizerManager.onResultsReady() {
             @Override
+            // getting results from speech
             public void onResults(ArrayList<String> results) {
 
 
-                if (results != null && results.size() > 0) {
-                    Log.i("MAINACTIVITY", results.get(0));
+                if (results != null && results.size() > 0 && results.get(0) != "ERROR RECOGNIZER BUSY") {
+                    Log.i("MAINACTIVITY", "recognized: " + results.get(0));
                     if(!results.get(0).isEmpty()) {
+                        // sending speech data to api.ai
                         aiRequest.setQuery(results.get(0));
                         aiRequest.setLanguage("en");
                         new AsyncTask<AIRequest, Void, AIResponse>() {
@@ -194,9 +180,6 @@ public class MainActivity extends Activity {
                             }
                         }.execute(aiRequest);
                     }
-//                        check(results.get(0));
-                    //result_tv.setText(sb.toString());
-                    //}
                 }
             }
         });
@@ -250,90 +233,14 @@ public class MainActivity extends Activity {
             play(happy);
             cs = 1;
         }
-
+        else if (ch.equalsIgnoreCase("so")){
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_HOME);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        }
 
     }
-//    private void check(String message) {
-//        boolean hello = false;
-//        if(message.length()>4)
-//            hello = containsHello(message);
-//        cs=0;
-//        if(message.equalsIgnoreCase("move forward") || message.equalsIgnoreCase("forward")){
-//            ch = "f";
-//            cs = 1;
-//        }
-//        else if(hello){
-//            t1.setPitch(2);
-//            if(!message2.isEmpty()){
-//                t1.speak("hello" + message2,TextToSpeech.QUEUE_FLUSH, null);
-//            }
-//            else
-//                t1.speak("hi",TextToSpeech.QUEUE_FLUSH, null);
-//            play(happy);
-//        }
-//        else if (message.equalsIgnoreCase("move backward") || message.equalsIgnoreCase("backward")
-//                || message.equalsIgnoreCase("move backwards") || message.equalsIgnoreCase("awkward")
-//                || message.equalsIgnoreCase("backwards") ){
-//            ch = "b";
-//            cs = 1;
-//        }
-//        else if (message.equalsIgnoreCase("move right") || message.equalsIgnoreCase("right")
-//                || message.equalsIgnoreCase("light") || message.equalsIgnoreCase("turn right") ){
-//            ch = "r";
-//            cs = 1;
-//        }
-//        else if (message.equalsIgnoreCase("move left") || message.equalsIgnoreCase("left")
-//                || message.equalsIgnoreCase("turn left") ){
-//            ch = "l";
-//            cs = 1;
-//        }
-//        else if (message.equalsIgnoreCase("stop") ){
-//            ch = "t";
-//            cs = 1;
-//        }
-//        else if(message.equalsIgnoreCase("angry") || message.equalsIgnoreCase("anger")
-//               || message.equalsIgnoreCase("I am angry") || message.equalsIgnoreCase("I'm angry")
-//                || message.equalsIgnoreCase("hungry") || message.equalsIgnoreCase("I am hungry")
-//                || message.equalsIgnoreCase("I'm hungry")){
-//            ch = "a";
-//            cs = 1;
-//            play(angry);
-//        }
-//        else if(message.equalsIgnoreCase("happy") || message.equalsIgnoreCase("I am happy")
-//                || message.equalsIgnoreCase("I'm happy")){
-//            ch = "h";
-//            cs = 1;
-//            play(happy);
-//        }
-//        else if(message.equalsIgnoreCase("sad") || message.equalsIgnoreCase("I am sad")
-//                || message.equalsIgnoreCase("I'm sorry")|| message.equalsIgnoreCase("side")){
-//            ch = "s";
-//            cs = 1;
-//            play(sad);
-//        }
-//        Log.d("MAINACTIVITY", ch);
-//    }
-
-//    private boolean containsHello(String message) {
-//        if(message.equalsIgnoreCase("hello")){
-//            message2 = "";
-//            return true;
-//        }
-//        else if (message.substring(0,5).equalsIgnoreCase("hello")){
-//            char [] a = message.toCharArray();
-//            int i;
-//            for( i = a.length-1; i>=0; i--){
-//                if(a[i] == ' ')
-//                    break;
-//            }
-//            message2 = message.substring(++i);
-//            Log.i("MAINACTIVITY",message2);
-//            return true;
-//        }
-//        else
-//            return false;
-//    }
-
     @Override
     protected void onStart() {
         t1 = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
@@ -411,6 +318,7 @@ public class MainActivity extends Activity {
         super.onDestroy();
 
     }
+    //connecting to the bluetooth
     public void bluetoothConnect() {
         Set<BluetoothDevice> pairedDevices = bt.getBondedDevices();
         ArrayList<String> listOfDevices = new ArrayList<>();
@@ -451,9 +359,6 @@ public class MainActivity extends Activity {
             mySocket.connect();
             Log.d("MAINACTIVITY", "socket connected");
         } catch (IOException e) {
-//            Toast.makeText(this, "socket connection failed \n" + e, Toast.LENGTH_SHORT).show();
-//            Log.d("MAINACTIVITY", e.toString());
-
             try {
                 Log.d("MAINACTIVITY", "trying fallback...");
 
@@ -470,6 +375,8 @@ public class MainActivity extends Activity {
         c.connectedThread(mySocket, f);
     }
 
+// sending data via bluetooth
+    
     public class ConnectedThread extends Thread {
         BluetoothSocket socket;
         String f;
