@@ -7,25 +7,36 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
-import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 import android.widget.VideoView;
+
+import com.google.gson.JsonElement;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID;
+import ai.api.AIDataService;
+import ai.api.AIListener;
+import ai.api.AIServiceException;
+import ai.api.android.AIConfiguration;
+import ai.api.android.AIService;
+import ai.api.model.AIRequest;
+import ai.api.model.AIResponse;
+import ai.api.model.Metadata;
+import ai.api.model.Result;
+import ai.api.model.Status;
 
-
-public class MainActivity extends Activity{
+public class MainActivity extends Activity {
 
     private SpeechRecognizerManager mSpeechManager;
 
@@ -46,11 +57,24 @@ public class MainActivity extends Activity{
     Handler mHandler;
     TextToSpeech t1;
     String message2;
+    private AIService aiService;
+    private AIRequest aiRequest;
+    private ai.api.AIDataService aiDataService;
+    final String TAG = "MAINACTIVITY";
+    private AIResponse response;;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        final AIConfiguration config = new AIConfiguration("113d9a1fd6aa47988a6193227689dc99",
+                AIConfiguration.SupportedLanguages.English,
+                AIConfiguration.RecognitionEngine.System);
+        aiDataService = new AIDataService(config);
+        Log.i(TAG, config.toString());
+        aiService = AIService.getService(getApplicationContext(), config);
+        aiRequest = new AIRequest();
 
         videoView = (VideoView) findViewById(R.id.videoView);
         play(neutral);
@@ -101,7 +125,7 @@ public class MainActivity extends Activity{
 //        }
 //
 //    };
-    private void play(int video) {
+    private void play(final int video) {
         String uriPath = "android.resource://com.example.voicerecognition/" + video;
         Uri uri2 = Uri.parse(uriPath);
         videoView.setVideoURI(uri2);
@@ -144,24 +168,33 @@ public class MainActivity extends Activity{
 
 
                 if (results != null && results.size() > 0) {
-
-//                    if(results.size()==1)
-//                    {
-//                        mSpeechManager.destroy();
-//                        mSpeechManager = null;
-//                        result_tv.setText(results.get(0));
-//                    }
-//                    else {
-//                        StringBuilder sb = new StringBuilder();
-//                        if (results.size() > 5) {
-//                            results = (ArrayList<String>) results.subList(0, 5);
-//                        }
-//                        for (String result : results) {
-//                            sb.append(result).append("\n");
-//                        }
                     Log.i("MAINACTIVITY", results.get(0));
-                    if(!results.get(0).isEmpty())
-                        check(results.get(0));
+                    if(!results.get(0).isEmpty()) {
+                        aiRequest.setQuery(results.get(0));
+                        aiRequest.setLanguage("en");
+                        new AsyncTask<AIRequest, Void, AIResponse>() {
+                            @Override
+                            protected AIResponse doInBackground(AIRequest... requests) {
+                                final AIRequest request = requests[0];
+                                try {
+                                    response = aiDataService.request(aiRequest);
+                                    return response;
+                                } catch (AIServiceException e) {
+                                    Log.e(TAG,e.toString());
+                                }
+                                return null;
+                            }
+                            @Override
+                            protected void onPostExecute(AIResponse aiResponse) {
+                                if (aiResponse != null) {
+                                    // process aiResponse here
+                                    Log.i(TAG, aiResponse.toString());
+                                    onResult(aiResponse);
+                                }
+                            }
+                        }.execute(aiRequest);
+                    }
+//                        check(results.get(0));
                     //result_tv.setText(sb.toString());
                     //}
                 }
@@ -169,86 +202,137 @@ public class MainActivity extends Activity{
         });
 
     }
-    private void check(String message) {
-        boolean hello = false;
-        if(message.length()>4)
-            hello = containsHello(message);
-        cs=0;
-        if(message.equalsIgnoreCase("move forward") || message.equalsIgnoreCase("forward")){
-            ch = "f";
-            cs = 1;
-        }
-        else if(hello){
-            t1.setPitch(2);
-            if(!message2.isEmpty()){
-                t1.speak("hello" + message2,TextToSpeech.QUEUE_FLUSH, null);
-            }
-            else
-                t1.speak("hi",TextToSpeech.QUEUE_FLUSH, null);
-            play(happy);
-        }
-        else if (message.equalsIgnoreCase("move backward") || message.equalsIgnoreCase("backward")
-                || message.equalsIgnoreCase("move backwards") || message.equalsIgnoreCase("awkward")
-                || message.equalsIgnoreCase("backwards") ){
-            ch = "b";
-            cs = 1;
-        }
-        else if (message.equalsIgnoreCase("move right") || message.equalsIgnoreCase("right")
-                || message.equalsIgnoreCase("light") || message.equalsIgnoreCase("turn right") ){
-            ch = "r";
-            cs = 1;
-        }
-        else if (message.equalsIgnoreCase("move left") || message.equalsIgnoreCase("left")
-                || message.equalsIgnoreCase("turn left") ){
-            ch = "l";
-            cs = 1;
-        }
-        else if (message.equalsIgnoreCase("stop") ){
-            ch = "t";
-            cs = 1;
-        }
-        else if(message.equalsIgnoreCase("angry") || message.equalsIgnoreCase("anger")
-               || message.equalsIgnoreCase("I am angry") || message.equalsIgnoreCase("I'm angry")
-                || message.equalsIgnoreCase("hungry") || message.equalsIgnoreCase("I am hungry")
-                || message.equalsIgnoreCase("I'm hungry")){
-            ch = "a";
-            cs = 1;
-            play(angry);
-        }
-        else if(message.equalsIgnoreCase("happy") || message.equalsIgnoreCase("I am happy")
-                || message.equalsIgnoreCase("I'm happy")){
-            ch = "h";
-            cs = 1;
-            play(happy);
-        }
-        else if(message.equalsIgnoreCase("sad") || message.equalsIgnoreCase("I am sad")
-                || message.equalsIgnoreCase("I'm sorry")|| message.equalsIgnoreCase("side")){
-            ch = "s";
-            cs = 1;
-            play(sad);
-        }
-        Log.d("MAINACTIVITY", ch);
-    }
+    public void onResult(final AIResponse response) {
 
-    private boolean containsHello(String message) {
-        if(message.equalsIgnoreCase("hello")){
-            message2 = "";
-            return true;
-        }
-        else if (message.substring(0,5).equalsIgnoreCase("hello")){
-            char [] a = message.toCharArray();
-            int i;
-            for( i = a.length-1; i>=0; i--){
-                if(a[i] == ' ')
-                    break;
+        Result result = response.getResult();
+
+        //Get speech
+
+        final String speech = result.getFulfillment().getSpeech();
+        Log.i(TAG, "Speech: " + speech);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                t1.speak(speech,TextToSpeech.QUEUE_FLUSH, null);
             }
-            message2 = message.substring(++i);
-            Log.i("MAINACTIVITY",message2);
-            return true;
+        }).start();
+
+        //Get action
+        ch = result.getAction();
+        Log.i(TAG, "Action: " + ch);
+        cs = 0;
+        //play videos according to action
+        if(ch.equalsIgnoreCase("h")){
+            play(happy);
+            cs = 1;
         }
-        else
-            return false;
+        else if(ch.equalsIgnoreCase("s")){
+            play(sad);
+            cs = 1;
+        }
+        else if(ch.equalsIgnoreCase("a")){
+            play(angry);
+            cs = 1;
+        }
+        else if(ch.equalsIgnoreCase("f")){
+            play(happy);
+            cs = 1;
+        }
+        else if(ch.equalsIgnoreCase("b")){
+            play(happy);
+            cs = 1;
+        }
+        else if(ch.equalsIgnoreCase("l")){
+            play(happy);
+            cs = 1;
+        }
+        else if(ch.equalsIgnoreCase("r")){
+            play(happy);
+            cs = 1;
+        }
+
+
     }
+//    private void check(String message) {
+//        boolean hello = false;
+//        if(message.length()>4)
+//            hello = containsHello(message);
+//        cs=0;
+//        if(message.equalsIgnoreCase("move forward") || message.equalsIgnoreCase("forward")){
+//            ch = "f";
+//            cs = 1;
+//        }
+//        else if(hello){
+//            t1.setPitch(2);
+//            if(!message2.isEmpty()){
+//                t1.speak("hello" + message2,TextToSpeech.QUEUE_FLUSH, null);
+//            }
+//            else
+//                t1.speak("hi",TextToSpeech.QUEUE_FLUSH, null);
+//            play(happy);
+//        }
+//        else if (message.equalsIgnoreCase("move backward") || message.equalsIgnoreCase("backward")
+//                || message.equalsIgnoreCase("move backwards") || message.equalsIgnoreCase("awkward")
+//                || message.equalsIgnoreCase("backwards") ){
+//            ch = "b";
+//            cs = 1;
+//        }
+//        else if (message.equalsIgnoreCase("move right") || message.equalsIgnoreCase("right")
+//                || message.equalsIgnoreCase("light") || message.equalsIgnoreCase("turn right") ){
+//            ch = "r";
+//            cs = 1;
+//        }
+//        else if (message.equalsIgnoreCase("move left") || message.equalsIgnoreCase("left")
+//                || message.equalsIgnoreCase("turn left") ){
+//            ch = "l";
+//            cs = 1;
+//        }
+//        else if (message.equalsIgnoreCase("stop") ){
+//            ch = "t";
+//            cs = 1;
+//        }
+//        else if(message.equalsIgnoreCase("angry") || message.equalsIgnoreCase("anger")
+//               || message.equalsIgnoreCase("I am angry") || message.equalsIgnoreCase("I'm angry")
+//                || message.equalsIgnoreCase("hungry") || message.equalsIgnoreCase("I am hungry")
+//                || message.equalsIgnoreCase("I'm hungry")){
+//            ch = "a";
+//            cs = 1;
+//            play(angry);
+//        }
+//        else if(message.equalsIgnoreCase("happy") || message.equalsIgnoreCase("I am happy")
+//                || message.equalsIgnoreCase("I'm happy")){
+//            ch = "h";
+//            cs = 1;
+//            play(happy);
+//        }
+//        else if(message.equalsIgnoreCase("sad") || message.equalsIgnoreCase("I am sad")
+//                || message.equalsIgnoreCase("I'm sorry")|| message.equalsIgnoreCase("side")){
+//            ch = "s";
+//            cs = 1;
+//            play(sad);
+//        }
+//        Log.d("MAINACTIVITY", ch);
+//    }
+
+//    private boolean containsHello(String message) {
+//        if(message.equalsIgnoreCase("hello")){
+//            message2 = "";
+//            return true;
+//        }
+//        else if (message.substring(0,5).equalsIgnoreCase("hello")){
+//            char [] a = message.toCharArray();
+//            int i;
+//            for( i = a.length-1; i>=0; i--){
+//                if(a[i] == ' ')
+//                    break;
+//            }
+//            message2 = message.substring(++i);
+//            Log.i("MAINACTIVITY",message2);
+//            return true;
+//        }
+//        else
+//            return false;
+//    }
 
     @Override
     protected void onStart() {
