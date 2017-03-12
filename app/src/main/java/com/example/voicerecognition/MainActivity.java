@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 
 import ai.api.AIDataService;
 import ai.api.AIListener;
@@ -40,12 +41,13 @@ public class MainActivity extends Activity {
 
     private SpeechRecognizerManager mSpeechManager;
 
-    String ch = "";
+    String ch = " ";
     int cs;
     BluetoothAdapter bt = BluetoothAdapter.getDefaultAdapter();;
     BluetoothDevice myDevice = null;
     BluetoothSocket mySocket = null;
     OutputStream myOutputStream;
+    // enter the mac address of the device you want to  connect to
     final String MAC_ADDRESS = "98:D3:31:80:79:31";
     String s = null;
     VideoView videoView;
@@ -75,6 +77,8 @@ public class MainActivity extends Activity {
         Log.i(TAG, config.toString());
         aiService = AIService.getService(getApplicationContext(), config);
         aiRequest = new AIRequest();
+
+        bluetoothConnect();
 
         videoView = (VideoView) findViewById(R.id.videoView);
         play(neutral);
@@ -189,49 +193,60 @@ public class MainActivity extends Activity {
 
         Result result = response.getResult();
 
-        //Get speech
-
-        final String speech = result.getFulfillment().getSpeech();
-        Log.i(TAG, "Speech: " + speech);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                t1.speak(speech,TextToSpeech.QUEUE_FLUSH, null);
-            }
-        }).start();
-
         //Get action
         ch = result.getAction();
         Log.i(TAG, "Action: " + ch);
         cs = 0;
+
+        //Get speech
+
+        final String speech = result.getFulfillment().getSpeech();
+        Log.i(TAG, "Speech: " + speech);
+        new AsyncTask<Void,Void,Void>(){
+
+            @Override
+            protected Void doInBackground(Void... params) {
+
+                t1.speak(speech,TextToSpeech.QUEUE_FLUSH, null);
+                return null;
+            }
+        }.execute();
+
         //play videos according to action
         if(ch.equalsIgnoreCase("h")){
             play(happy);
             cs = 1;
+            send(ch);
         }
         else if(ch.equalsIgnoreCase("s")){
             play(sad);
             cs = 1;
+            send(ch);
         }
         else if(ch.equalsIgnoreCase("a")){
             play(angry);
             cs = 1;
+            send(ch);
         }
         else if(ch.equalsIgnoreCase("f")){
             play(happy);
             cs = 1;
+            send(ch);
         }
         else if(ch.equalsIgnoreCase("b")){
             play(happy);
             cs = 1;
+            send(ch);
         }
         else if(ch.equalsIgnoreCase("l")){
             play(happy);
             cs = 1;
+            send(ch);
         }
         else if(ch.equalsIgnoreCase("r")){
             play(happy);
             cs = 1;
+            send(ch);
         }
         else if (ch.equalsIgnoreCase("so")){
             Intent intent = new Intent(Intent.ACTION_MAIN);
@@ -241,8 +256,18 @@ public class MainActivity extends Activity {
         }
 
     }
+    // comment the following function if you are not connecting with bluetooth
+    public void send(String ch)
+    {
+        try {
+            createSocket(ch);
+        } catch (IOException ioe) {
+            Log.d("MAINACTIVITY", ioe.toString());
+        }
+    }
     @Override
     protected void onStart() {
+        //text to speech initialised
         t1 = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
@@ -252,21 +277,6 @@ public class MainActivity extends Activity {
             }
         });
         super.onStart();
-    }
-
-    @Override
-    protected void onResume() {
-        if(cs==1){
-            bluetoothConnect();
-            try {
-                createSocket(s);
-            } catch (IOException ioe) {
-                Log.d("MAINACTIVITY", ioe.toString());
-            }
-        }
-
-
-        super.onResume();
     }
 
     @Override
@@ -371,35 +381,34 @@ public class MainActivity extends Activity {
             }
         }
 
-        ConnectedThread c = new ConnectedThread();
-        c.connectedThread(mySocket, f);
+        try {
+            myOutputStream = mySocket.getOutputStream();
+            Log.d("MAINACTIVITY", "got output stream");
+        } catch (IOException e) {
+            Log.d("MAINACTIVITY", e.toString());
+        }
+
+        try {
+            myOutputStream.write(f.getBytes());
+            Log.d("MAINACTIVITY", "wrote value " + f + " on serial out");
+        } catch (IOException e) {
+            Log.d("MAINACTIVITY", e.toString());
+        }
+        finally {
+            myOutputStream.close();
+            Log.d("MAINACTIVITY", "Output stream was closed");
+        }
     }
 
 // sending data via bluetooth
-    
-    public class ConnectedThread extends Thread {
-        BluetoothSocket socket;
-        String f;
-        public void connectedThread  (BluetoothSocket socket, String f){
-            this.socket = socket;
-            this.f=f;
-        }
-        @Override
-        public void run() {
-            try {
-                myOutputStream = socket.getOutputStream();
-                Log.d("MAINACTIVITY", "got output stream");
-            } catch (IOException e) {
-                Log.d("MAINACTIVITY", e.toString());
-            }
 
-            try {
-                myOutputStream.write(f.getBytes());
-                Log.d("MAINACTIVITY", "wrote value on serial out");
-            } catch (IOException e) {
-                Log.d("MAINACTIVITY", e.toString());
-            }
-
-        }
-    }
+//    public class ConnectedThread {
+//        BluetoothSocket socket;
+//        String f;
+//        public void connectedThread  (BluetoothSocket socket, String f){
+//            this.socket = socket;
+//            this.f=f;
+//
+//        }
+//    }
 }
