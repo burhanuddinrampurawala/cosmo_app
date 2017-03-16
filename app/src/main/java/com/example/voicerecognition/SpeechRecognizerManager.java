@@ -27,8 +27,6 @@ public class SpeechRecognizerManager {
     private boolean mIsStreamSolo;
 
 
-    private boolean mMute=true;
-
 
 
     private final static String TAG="SpeechRecognizerManager";
@@ -75,7 +73,7 @@ public class SpeechRecognizerManager {
             mIsListening = true;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 // turn off beep sound
-                if (!mIsStreamSolo && mMute) {
+                if (!mIsStreamSolo ) {
                     mAudioManager.setStreamMute(AudioManager.STREAM_NOTIFICATION, true);
                     mAudioManager.setStreamMute(AudioManager.STREAM_ALARM, true);
                     mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, true);
@@ -190,7 +188,7 @@ public class SpeechRecognizerManager {
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    // Do something after 5s = 5000ms
+                    // Do something after 6s = 6000ms
                     listenAgain();
                 }
             }, 6000);
