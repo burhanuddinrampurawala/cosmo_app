@@ -6,41 +6,31 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.widget.VideoView;
 
-import com.google.gson.JsonElement;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Executor;
 
 import ai.api.AIDataService;
-import ai.api.AIListener;
 import ai.api.AIServiceException;
 import ai.api.android.AIConfiguration;
 import ai.api.android.AIService;
 import ai.api.model.AIRequest;
 import ai.api.model.AIResponse;
-import ai.api.model.Metadata;
 import ai.api.model.Result;
-import ai.api.model.Status;
-
-import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
 
 public class MainActivity extends Activity {
 
@@ -61,7 +51,7 @@ public class MainActivity extends Activity {
     final int angry = R.raw.angry;
     final int sad = R.raw.sad;
     final int happy = R.raw.happy;
-    final int batteryfull = 1;
+    final int cool = 1;
     final int batterylow = 2;
     TextToSpeech t1;
     private AIService aiService;
@@ -87,7 +77,7 @@ public class MainActivity extends Activity {
         bluetoothConnect();
 
         videoView = (VideoView) findViewById(R.id.videoView);
-        play(neutral);
+        playVideo(neutral);
 // checking if bluetooth is on or not
         if (bt == null) {
             Log.d("MAINACTIVITY", "bluetooth not detected");
@@ -117,15 +107,26 @@ public class MainActivity extends Activity {
         }
 
     }
+    @Override
+    protected void onStart() {
+        //text to speech initialised
+        speechInitialisation();
+        super.onStart();
+    }
 
     // function to play videos
-    private void play(final int video) {
+    private void playVideo(final int video) {
         Log.i(TAG, "playing video");
         String uriPath = "android.resource://com.example.voicerecognition/" + video;
         Uri uri2 = Uri.parse(uriPath);
         videoView.setVideoURI(uri2);
         videoView.requestFocus();
         videoView.start();
+    }
+    //function to play music
+    private void playMusic(){
+        MediaPlayer play = MediaPlayer.create(MainActivity.this,R.raw.eva_music);
+        play.start();
     }
 
     @Override
@@ -221,19 +222,28 @@ public class MainActivity extends Activity {
             }
         }.execute();
 
-        //play videos according to the action
+        //playVideo videos according to the action
         if(ch.equalsIgnoreCase("h") || ch.equalsIgnoreCase("f") || ch.equalsIgnoreCase("b") ||
-                ch.equalsIgnoreCase("l") || ch.equalsIgnoreCase("r") || ch.equalsIgnoreCase("d")
-                || ch.equals("A") || ch.equals("C")){
-            play(happy);
+                ch.equalsIgnoreCase("l") || ch.equalsIgnoreCase("r") || ch.equals("A")
+                || ch.equals("C") || ch.equals("m")){
+            playVideo(happy);
             send(ch);
         }
+        else if(ch.equalsIgnoreCase("d")){
+            playVideo(happy);
+            playMusic();
+            send(ch);
+        }
+        else if(ch.equalsIgnoreCase("ob")){
+            //playVideo(cool);
+        }
+
         else if(ch.equalsIgnoreCase("s")){
-            play(sad);
+            playVideo(sad);
             send(ch);
         }
         else if(ch.equals("a")) {
-            play(angry);
+            playVideo(angry);
             send(ch);
         }
         //to switch off the app
@@ -266,12 +276,6 @@ public class MainActivity extends Activity {
         });
         t1.setSpeechRate(0.8f);
         t1.setPitch(1.2f);
-    }
-    @Override
-    protected void onStart() {
-        //text to speech initialised
-        speechInitialisation();
-        super.onStart();
     }
 
     @Override
@@ -409,17 +413,19 @@ public class MainActivity extends Activity {
 
 
                try {
+                   // sending data to bluetooth
                    myOutputStream.write(f.getBytes());
                    Log.d("MAINACTIVITY", "wrote value " + f + " on serial out");
                } catch (IOException e) {
                    Log.d("MAINACTIVITY", e.toString());
                }
-//               try {
-//                   String s = String.valueOf(myinputStream.read());
-//                   Log.d("MAINACTIVITY", "read value " + s + " on serial in");
-//               } catch (IOException e) {
-//                   Log.d("MAINACTIVITY", e.toString());
-//               }
+               try {
+                   //storing data from bot in "s"
+                   String s = String.valueOf(myinputStream.read());
+                   Log.d("MAINACTIVITY", "read value " + s + " on serial in");
+               } catch (IOException e) {
+                   Log.d("MAINACTIVITY", e.toString());
+               }
                finally {
                    try {
                        myOutputStream.close();
@@ -433,15 +439,25 @@ public class MainActivity extends Activity {
                    }
                    Log.d("MAINACTIVITY", "stream was closed");
                }
+               // working on the data from the bot
                if(s != null){
                    if(s == "v")
                    {
                        t1.speak("battery low",TextToSpeech.QUEUE_FLUSH, null,"volume");
-                       //play(batterylow);
+                       //playVideo(batterylow);
                    }
                    else if(s == "w"){
                        t1.speak("battery full",TextToSpeech.QUEUE_FLUSH, null,"volume");
-                       //play(batteryfull);
+                       //playVideo(cool);
+                   }
+                   // playing a video when a task is completed by the bot
+                   else if (s == "e")
+                   {
+                       //playVideo(cool);
+                   }
+                   // playing a video when there is an obstruction
+                   else if (s == "ob" ){
+                       playVideo(angry);
                    }
                }
 
