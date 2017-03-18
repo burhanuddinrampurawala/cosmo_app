@@ -8,9 +8,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
@@ -21,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
@@ -59,6 +62,14 @@ public class MainActivity extends Activity {
     private ai.api.AIDataService aiDataService;
     final String TAG = "MAINACTIVITY";
     private AIResponse response;
+    final int dance =R.raw.eva_music;
+    final int tuesday = R.raw.tuesday;
+    final int something = R.raw.something;
+    final int shape = R.raw.shape;
+    final int rockabye = R.raw.rockbye;
+    final int stay = R.raw.stay;
+    final int cheap = R.raw.cheap;
+
 
 
     @Override
@@ -124,8 +135,9 @@ public class MainActivity extends Activity {
         videoView.start();
     }
     //function to play music
-    private void playMusic(){
-        MediaPlayer play = MediaPlayer.create(MainActivity.this,R.raw.eva_music);
+    private void playMusic(int song){
+        Log.i(TAG,"playing music");
+        MediaPlayer play = MediaPlayer.create(MainActivity.this,song);
         play.start();
     }
 
@@ -225,14 +237,35 @@ public class MainActivity extends Activity {
         //playVideo videos according to the action
         if(ch.equalsIgnoreCase("h") || ch.equalsIgnoreCase("f") || ch.equalsIgnoreCase("b") ||
                 ch.equalsIgnoreCase("l") || ch.equalsIgnoreCase("r") || ch.equals("A")
-                || ch.equals("C") || ch.equals("m")){
+                || ch.equals("C") || ch.equals("o")){
             playVideo(happy);
             send(ch);
         }
         else if(ch.equalsIgnoreCase("d")){
             playVideo(happy);
-            playMusic();
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    // Do something after 1s = 1000ms
+                    playMusic(dance);
+
+                }
+            }, 1000);
+
             send(ch);
+        }
+        else if(ch.equalsIgnoreCase("m")){
+
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    // Do something after 1s = 1000ms
+                    playRandomMusic();
+
+                }
+            }, 1000);
         }
         else if(ch.equalsIgnoreCase("ob")){
             //playVideo(cool);
@@ -248,13 +281,60 @@ public class MainActivity extends Activity {
         }
         //to switch off the app
         else if (ch.equalsIgnoreCase("so")){
-            Intent intent = new Intent(Intent.ACTION_MAIN);
-            intent.addCategory(Intent.CATEGORY_HOME);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    // Do something after 2s = 2000ms
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.addCategory(Intent.CATEGORY_HOME);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+
+                }
+            }, 2000);
         }
 
     }
+    //plays random music
+    private void playRandomMusic() {
+
+        Log.d(TAG,"waiting for 1 minute");
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                playVideo(neutral2);
+            }
+        },60000);
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                playVideo(neutral);
+            }
+        },30000);
+
+        playVideo(neutral2);
+        // generates random numbers from 1-5
+        Random rand = new Random();
+        int  n = rand.nextInt(6) + 1;
+        Log.i(TAG, String.valueOf(n));
+        if(n == 1)
+            playMusic(stay);
+        else if (n == 2)
+            playMusic(tuesday);
+        else if (n == 3)
+            playMusic(something);
+        else if (n == 4)
+            playMusic(shape);
+        else if (n == 5)
+            playMusic(rockabye);
+        else if (n == 6)
+            playMusic(cheap);
+
+    }
+
+
     // comment the following function if you are not connecting with bluetooth
     public void send(String ch)
     {
@@ -370,8 +450,8 @@ public class MainActivity extends Activity {
     // sending data via bluetooth
     void createSocket(final String f) throws IOException {
 
-
        new AsyncTask<Void, Void, Void>(){
+           String s;
            @Override
            protected Void doInBackground(Void... params) {
                bt.cancelDiscovery();
@@ -405,7 +485,7 @@ public class MainActivity extends Activity {
                }
                try {
                    myinputStream = mySocket.getInputStream();
-                   Log.d("MAINACTIVITY", "got input stream");
+                   Log.d("MAINACTIVITY", "got input stream" );
                }
                catch (IOException e) {
                    Log.d("MAINACTIVITY", e.toString());
@@ -421,8 +501,20 @@ public class MainActivity extends Activity {
                }
                try {
                    //storing data from bot in "s"
-                   String s = String.valueOf(myinputStream.read());
-                   Log.d("MAINACTIVITY", "read value " + s + " on serial in");
+                   int numBytes; // bytes returned from read()
+                   byte[] myBuffer;//buffer for received data
+                   myBuffer = new byte[256];
+
+                   if (myinputStream.available()!=0) {
+                       // Read from the InputStream.
+                       numBytes = myinputStream.read(myBuffer);
+                       // Send the obtained bytes to the UI activity.
+                       s = new String(myBuffer, 0, numBytes);
+
+
+                       Log.d(TAG, s + " " + numBytes);
+                   }
+
                } catch (IOException e) {
                    Log.d("MAINACTIVITY", e.toString());
                }
@@ -439,6 +531,13 @@ public class MainActivity extends Activity {
                    }
                    Log.d("MAINACTIVITY", "stream was closed");
                }
+
+
+               return null;
+           }
+
+           @Override
+           protected void onPostExecute(Void aVoid) {
                // working on the data from the bot
                if(s != null){
                    if(s == "v")
@@ -460,12 +559,8 @@ public class MainActivity extends Activity {
                        playVideo(angry);
                    }
                }
-
-               return null;
+               super.onPostExecute(aVoid);
            }
-
-
-
        }.execute();
     }
 

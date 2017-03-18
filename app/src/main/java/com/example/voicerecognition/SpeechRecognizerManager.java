@@ -56,7 +56,7 @@ public class SpeechRecognizerManager {
 
     }
 
-    private void listenAgain()
+    public void listenAgain()
     {
         if(mIsListening) {
             mIsListening = false;
@@ -66,8 +66,9 @@ public class SpeechRecognizerManager {
     }
 
 
-    private void startListening()
+    public void startListening()
     {
+        Log.i("MAINACTIVITY","listenting");
         if(!mIsListening)
         {
             mIsListening = true;
