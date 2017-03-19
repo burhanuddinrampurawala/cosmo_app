@@ -548,28 +548,34 @@ public class MainActivity extends Activity {
            protected void onPostExecute(Void aVoid) {
                // working on the data from the bot
 
-               if(s != null){
-                   char [] m = s.toCharArray();
-                   if( m[0] == 'v')
-                   {
-                       t1.speak("battery low",TextToSpeech.QUEUE_FLUSH, null,"volume");
-                       //playVideo(batterylow);
+               Handler h = new Handler();
+               h.postDelayed(new Runnable() {
+                   @Override
+                   public void run() {
+                       if(s != null){
+                           char [] m = s.toCharArray();
+                           if( m[0] == 'v')
+                           {
+                               t1.speak("battery low",TextToSpeech.QUEUE_FLUSH, null,"volume");
+                               //playVideo(batterylow);
+                           }
+                           else if(m[0] == 'w'){
+                               t1.speak("battery full",TextToSpeech.QUEUE_FLUSH, null,"volume");
+                               //playVideo(cool);
+                           }
+                           // playing a video when a task is completed by the bot
+                           else if (m[0] == 'e')
+                           {
+                               t1.speak("done",TextToSpeech.QUEUE_FLUSH, null,"volume");
+                               //playVideo(cool);
+                           }
+                           // playing a video when there is an obstruction
+                           else if (m[0] == 'o'){
+                               playVideo(angry);
+                           }
+                       }
                    }
-                   else if(m[0] == 'w'){
-                       t1.speak("battery full",TextToSpeech.QUEUE_FLUSH, null,"volume");
-                       //playVideo(cool);
-                   }
-                   // playing a video when a task is completed by the bot
-                   else if (m[0] == 'e')
-                   {
-                       t1.speak("done",TextToSpeech.QUEUE_FLUSH, null,"volume");
-                       //playVideo(cool);
-                   }
-                   // playing a video when there is an obstruction
-                   else if (m[0] == 'o'){
-                       playVideo(angry);
-                   }
-               }
+               },2000);
                super.onPostExecute(aVoid);
            }
        }.execute();
