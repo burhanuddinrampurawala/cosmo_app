@@ -69,6 +69,7 @@ public class MainActivity extends Activity {
     final int rockabye = R.raw.rockbye;
     final int stay = R.raw.stay;
     final int cheap = R.raw.cheap;
+    MediaPlayer play = null;
 
 
 
@@ -137,7 +138,7 @@ public class MainActivity extends Activity {
     //function to play music
     private void playMusic(int song){
         Log.i(TAG,"playing music");
-        MediaPlayer play = MediaPlayer.create(MainActivity.this,song);
+        play = MediaPlayer.create(MainActivity.this,song);
         play.start();
     }
 
@@ -254,6 +255,14 @@ public class MainActivity extends Activity {
             }, 1000);
 
             send(ch);
+        }
+        else if(ch.equalsIgnoreCase("t")){
+            playVideo(happy);
+            Log.i(TAG,"stoping music");
+            if(play != null ){
+                play.stop();
+            }
+            send (ch);
         }
         else if(ch.equalsIgnoreCase("m")){
 
@@ -501,19 +510,18 @@ public class MainActivity extends Activity {
                }
                try {
                    //storing data from bot in "s"
+
                    int numBytes; // bytes returned from read()
                    byte[] myBuffer;//buffer for received data
                    myBuffer = new byte[256];
 
-                   if (myinputStream.available()!=0) {
-                       // Read from the InputStream.
-                       numBytes = myinputStream.read(myBuffer);
-                       // Send the obtained bytes to the UI activity.
-                       s = new String(myBuffer, 0, numBytes);
+                   // Read from the InputStream.
+                   numBytes = myinputStream.read(myBuffer);
+                   // Send the obtained bytes to the UI activity.
+                   s = new String(myBuffer, 0, numBytes);
 
-
-                       Log.d(TAG, s + " " + numBytes);
-                   }
+                   Log.d(TAG, String.valueOf(numBytes));
+                   Log.d(TAG, s);
 
                } catch (IOException e) {
                    Log.d("MAINACTIVITY", e.toString());
@@ -539,23 +547,26 @@ public class MainActivity extends Activity {
            @Override
            protected void onPostExecute(Void aVoid) {
                // working on the data from the bot
+
                if(s != null){
-                   if(s == "v")
+                   char [] m = s.toCharArray();
+                   if( m[0] == 'v')
                    {
                        t1.speak("battery low",TextToSpeech.QUEUE_FLUSH, null,"volume");
                        //playVideo(batterylow);
                    }
-                   else if(s == "w"){
+                   else if(m[0] == 'w'){
                        t1.speak("battery full",TextToSpeech.QUEUE_FLUSH, null,"volume");
                        //playVideo(cool);
                    }
                    // playing a video when a task is completed by the bot
-                   else if (s == "e")
+                   else if (m[0] == 'e')
                    {
+                       t1.speak("done",TextToSpeech.QUEUE_FLUSH, null,"volume");
                        //playVideo(cool);
                    }
                    // playing a video when there is an obstruction
-                   else if (s == "ob" ){
+                   else if (m[0] == 'o'){
                        playVideo(angry);
                    }
                }

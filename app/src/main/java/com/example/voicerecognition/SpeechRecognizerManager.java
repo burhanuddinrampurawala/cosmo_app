@@ -75,11 +75,11 @@ public class SpeechRecognizerManager {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 // turn off beep sound
                 if (!mIsStreamSolo ) {
-                    mAudioManager.setStreamMute(AudioManager.STREAM_NOTIFICATION, true);
-                    mAudioManager.setStreamMute(AudioManager.STREAM_ALARM, true);
-                    mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, true);
-                    mAudioManager.setStreamMute(AudioManager.STREAM_RING, true);
-                    mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, true);
+                    mAudioManager.setStreamMute(AudioManager.STREAM_NOTIFICATION, false);
+                    mAudioManager.setStreamMute(AudioManager.STREAM_ALARM, false);
+                    mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
+                    mAudioManager.setStreamMute(AudioManager.STREAM_RING, false);
+                    mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
                     mIsStreamSolo = true;
                 }
             }
